@@ -2,3 +2,6 @@
 public
 !public/index.html
 node_modules
+
+__pycache__
+py/config.py
