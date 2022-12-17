@@ -1,0 +1,14 @@
+{
+  "type": "module",
+  "scripts": {
+    "start": "node esbuild.config.js -w",
+    "build": "node esbuild.config.js"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.3"
+  },
+  "devDependencies": {
+    "esbuild": "0.16.8",
+    "esbuild-serve": "^1.0.1"
+  }
+}
