@@ -1,10 +1,10 @@
 import json
 import os
-import pathlib
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional
+from pathlib import Path
+from typing import List, Optional, Union
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
@@ -15,8 +15,11 @@ import pandas as pd
 import requests
 
 from geographiclib.geodesic import Geodesic
+from gpxpy.gpx import GPXTrack, GPXTrackSegment, GPXTrackPoint, GPX
 
 from .config import ARC_GIS_API_KEY
+
+PathLike = Union[Path, str]
 
 
 @dataclass
@@ -26,14 +29,17 @@ class Image:
     lat: Optional[float] = None
     lon: Optional[float] = None
 
+    def __str__(self):
+        return self.name
+
 
 def list_image_timestamps(
-    directory: str,
+    directory: PathLike,
     ext: str = ".jpg",
     tz: ZoneInfo = ZoneInfo("US/Hawaii"),
 ) -> List[Image]:
     rv = []
-    path = pathlib.Path(directory)
+    path = Path(directory)
     for filename in os.listdir(path):
         filename = str(filename)
         if not filename.lower().endswith(ext.lower()):
@@ -50,16 +56,17 @@ def list_image_timestamps(
                 ),
             )
         )
-    return rv
+    return sorted(rv, key=lambda img: img.ts)
 
 
-def gpx_segment_to_df(seg):
+def gpx_segment_to_df(seg: GPXTrackSegment):
     return pd.DataFrame.from_records(
         [
             dict(
                 ts=point.time.replace(tzinfo=ZoneInfo("UTC")),
                 lat=point.latitude,
                 lon=point.longitude,
+                elevation=point.elevation,
             )
             for point in seg.points
         ],
@@ -67,8 +74,16 @@ def gpx_segment_to_df(seg):
     )
 
 
-def gpx_tracks_to_df(directory: str, ext: str = ".gpx") -> pd.DataFrame:
-    path = pathlib.Path(directory)
+def gpx_track_to_df(track: GPXTrack):
+    df_segs = []
+    for seg in track.segments:
+        df_segs.append(gpx_segment_to_df(seg))
+
+    return pd.concat(df_segs).sort_index()
+
+
+def gpx_tracks_to_df(directory: PathLike, ext: str = ".gpx") -> pd.DataFrame:
+    path = Path(directory)
     df_segs = []
     for filename in os.listdir(path):
         filename: str
@@ -76,36 +91,31 @@ def gpx_tracks_to_df(directory: str, ext: str = ".gpx") -> pd.DataFrame:
             continue
 
         for track in load_gpx(path / filename).tracks:
-            for seg in track.segments:
-                df_segs.append(gpx_segment_to_df(seg))
+            df_segs.append(gpx_track_to_df(track))
 
     df = pd.concat(df_segs)
     return df.sort_index()
 
 
-def load_gpx(filepath):
+def load_gpx(filepath: PathLike) -> GPX:
     with open(filepath) as f:
         return gpxpy.parse(f)
 
 
-def lat_lon_dist(point0, point1):
+def lat_lon_dist(point0: GPXTrackPoint, point1: GPXTrackPoint):
     """
     Returns the distance between two points in meters
     """
-    if isinstance(point0, (list, tuple)):
-        lat0, lon0 = point0[0], point0[1]
-        lat1, lon1 = point1[0], point1[1]
-    else:
-        lat0, lon0 = point0.latitude, point0.longitude
-        lat1, lon1 = point1.latitude, point1.longitude
+    lat0, lon0 = point0.latitude, point0.longitude
+    lat1, lon1 = point1.latitude, point1.longitude
     return Geodesic.WGS84.Inverse(lat0, lon0, lat1, lon1)["s12"]  # meters
 
 
-def dist_speed_elevation(p0, p1):
+def dist_speed_elevation(p0: GPXTrackPoint, p1: GPXTrackPoint):
     dist_m = lat_lon_dist(p0, p1)
     speed_m_per_s = dist_m / (p1.time - p0.time).total_seconds()
-    elevation = p1.elevation - p0.elevation
-    return dist_m, speed_m_per_s, elevation
+    elevation_m = p1.elevation - p0.elevation
+    return dist_m, speed_m_per_s, elevation_m
 
 
 def meters_to_feet(dist_m):
@@ -124,7 +134,7 @@ def meters_per_sec_to_miles_per_hour(mps):
     return mps * 2.236936
 
 
-def analyze_segment(seg, metric=True):
+def analyze_segment(seg: GPXTrackSegment, metric: bool = False):
     distances = [0]
     speeds = [0]
     elevations = [seg.points[0].elevation]
@@ -145,7 +155,7 @@ def analyze_segment(seg, metric=True):
     return distances, speeds, elevations
 
 
-def plot_segment(seg, metric=True):
+def plot_segment(seg: GPXTrackSegment, metric: bool = False):
     distances, speeds, elevations = analyze_segment(seg, metric=metric)
 
     fig, (ax0, ax1) = plt.subplots(2, 1)
@@ -165,6 +175,10 @@ def plot_segment(seg, metric=True):
     ax1.grid(True)
 
     plt.show()
+
+
+def gpx_stats():
+    pass
 
 
 def reverse_geocode(lat, lon):

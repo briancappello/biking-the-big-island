@@ -6,8 +6,9 @@ esbuildServe(
     logLevel: "info",
     entryPoints: ["src/index.js"],
     bundle: true,
-    outfile: "public/index.js",
+    outdir: "public",
     loader: {".png": "file"},
+    assetNames: "images/[name]"
   },
   // serve options
   {

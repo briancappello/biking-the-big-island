@@ -5,10 +5,16 @@
     "build": "node esbuild.config.js"
   },
   "dependencies": {
-    "leaflet": "^1.9.3"
+    "leaflet": "^1.9.3",
+    "leaflet-gpx": "^1.7.0"
   },
   "devDependencies": {
     "esbuild": "0.16.8",
-    "esbuild-serve": "^1.0.1"
+    "esbuild-serve": "^1.0.1",
+    "prettier": "^2.8.1"
+  },
+  "prettier": {
+    "printWidth": 98,
+    "trailingComma": "all"
   }
 }
