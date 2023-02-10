@@ -1,5 +1,7 @@
 # Adventure Log
 
+A travel log and interactive map for multi-day long distance adventures.
+
 ## Quickstart
 
 ```bash

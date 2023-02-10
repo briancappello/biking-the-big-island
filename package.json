@@ -1,6 +1,6 @@
 {
   "name": "adventure-log",
-  "description": "A travel log and interactive map for travel adventures.",
+  "description": "A travel log and interactive map for multi-day long distance adventures.",
   "version": "0.0.1",
   "license": "MIT",
   "type": "module",
