@@ -1,4 +1,8 @@
 {
+  "name": "adventure-log",
+  "description": "A travel log and interactive map for travel adventures.",
+  "version": "0.0.1",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "start": "node esbuild.config.js -w",

@@ -1,6 +1,5 @@
 .idea
 public
-!public/index.html
 node_modules
 
 __pycache__

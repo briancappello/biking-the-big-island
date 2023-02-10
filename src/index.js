@@ -8,7 +8,7 @@ import data from "./data.js";
 import images from "./images.js";
 
 window.STATE = {
-  dayIndex: 1,
+  dayIndex: 0,
   track: undefined,
   markers: [],
 };
